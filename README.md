@@ -139,3 +139,10 @@ Kota-TPS-Generation-Outage-Analytics/
 │   └── Kota_TPS_Dashboard.pbix
 │
 └── README.md
+
+---
+
+## Author
+
+**Shelly Sharma**  
+
