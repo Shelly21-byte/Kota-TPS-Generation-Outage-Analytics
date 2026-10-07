@@ -142,7 +142,4 @@ Kota-TPS-Generation-Outage-Analytics/
 
 ---
 
-## Author
-
-**Shelly Sharma**  
 
