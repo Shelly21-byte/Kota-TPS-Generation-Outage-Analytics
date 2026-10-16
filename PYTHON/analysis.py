@@ -33,6 +33,67 @@ print(station_df.columns.tolist())
 
 print("\nUnit Daily Columns:")
 print(unit_df.columns.tolist())
+
+# ============================================================
+# STEP 3.1 - STATION VS UNIT GENERATION RECONCILIATION
+# ============================================================
+
+# Standardize dates
+station_df["Date"] = pd.to_datetime(station_df["Date"], dayfirst=True)
+unit_df["Date"] = pd.to_datetime(unit_df["Date"], dayfirst=True)
+
+# Sum the generation of all seven units for each day
+unit_totals = (
+    unit_df.groupby("Date")["Actual_MU"]
+    .sum()
+    .reset_index()
+    .rename(columns={"Actual_MU": "Unit_Total_MU"})
+)
+
+# Compare unit totals with station totals
+reconciliation = station_df[
+    ["Date", "Actual_MU"]
+].rename(columns={"Actual_MU": "Station_Total_MU"})
+
+reconciliation = reconciliation.merge(
+    unit_totals,
+    on="Date",
+    how="outer",
+    validate="one_to_one",
+    indicator=True
+)
+
+# Calculate the absolute difference
+reconciliation["Difference_MU"] = (
+    reconciliation["Station_Total_MU"]
+    - reconciliation["Unit_Total_MU"]
+).abs()
+
+# Check missing dates and numerical differences
+tolerance = 0.000001
+
+reconciliation["Status"] = np.where(
+    (reconciliation["_merge"] == "both")
+    & (reconciliation["Difference_MU"] <= tolerance),
+    "PASS",
+    "FAIL"
+)
+
+# Display results
+print("\n--- STATION VS UNIT RECONCILIATION ---")
+
+print("Total dates:", len(reconciliation))
+print("Passed:", (reconciliation["Status"] == "PASS").sum())
+print("Failed:", (reconciliation["Status"] == "FAIL").sum())
+print("Maximum difference (MU):",
+      reconciliation["Difference_MU"].max())
+
+# Save validation results
+reconciliation.drop(columns=["_merge"]).to_csv(
+    "generation_reconciliation.csv",
+    index=False
+)
+
 # ============================================================
 # STEP 3.2 - RECALCULATE KPIs USING PYTHON
 # ============================================================
